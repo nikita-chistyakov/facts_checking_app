@@ -1,0 +1,5 @@
+{
+  "name": "FCKTY",
+  "description": "An advanced fact-checking and sentiment analysis tool utilizing Google Gemini with Search Grounding to verify claims and analyze discourse.",
+  "requestFramePermissions": []
+}

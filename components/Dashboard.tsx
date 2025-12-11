@@ -1,0 +1,216 @@
+import React from 'react';
+import { AnalysisResult, FactCheckClaim } from '../types';
+import { ResponsiveContainer, RadialBarChart, RadialBar, Tooltip as RechartsTooltip, Legend } from 'recharts';
+
+interface DashboardProps {
+  result: AnalysisResult;
+}
+
+const ScoreGauge: React.FC<{ score: number }> = ({ score }) => {
+  const data = [
+    { name: 'Accuracy', value: score, fill: score >= 8 ? '#10b981' : score >= 5 ? '#f59e0b' : '#ef4444' },
+    { name: 'Max', value: 10, fill: '#f1f5f9' },
+  ];
+  
+  const scoreColor = score >= 8 ? 'text-emerald-500' : score >= 5 ? 'text-amber-500' : 'text-red-500';
+
+  return (
+    <div className="relative h-56 w-full flex items-center justify-center -mt-4">
+       <ResponsiveContainer width="100%" height="100%">
+        <RadialBarChart 
+          innerRadius="70%" 
+          outerRadius="100%" 
+          barSize={12} 
+          data={data} 
+          startAngle={90} 
+          endAngle={-270}
+        >
+          <RadialBar
+            background={{ fill: '#f1f5f9' }}
+            dataKey="value"
+            cornerRadius={30}
+          />
+        </RadialBarChart>
+      </ResponsiveContainer>
+      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-2">
+        <span className={`text-6xl font-extrabold ${scoreColor} drop-shadow-sm`}>{score}</span>
+        <span className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-2">Trust Score</span>
+      </div>
+    </div>
+  );
+};
+
+const ClaimCard: React.FC<{ claim: FactCheckClaim }> = ({ claim }) => {
+  const colors = {
+    True: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    False: 'bg-red-100 text-red-800 border-red-200',
+    Misleading: 'bg-orange-100 text-orange-800 border-orange-200',
+    Unverified: 'bg-slate-100 text-slate-800 border-slate-200',
+    Mixed: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+  };
+
+  const badgeColor = colors[claim.verdict] || colors.Unverified;
+
+  return (
+    <div className="p-5 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-lg transition-all duration-300 group">
+      <div className="flex justify-between items-start gap-4 mb-3">
+        <h4 className="font-bold text-slate-800 text-base leading-snug group-hover:text-primary-700 transition-colors">{claim.claim}</h4>
+        <span className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${badgeColor}`}>
+          {claim.verdict}
+        </span>
+      </div>
+      <p className="text-slate-600 text-sm mb-4 leading-relaxed">{claim.explanation}</p>
+      <div className="flex items-center gap-3">
+         <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+            <div 
+                className={`h-full rounded-full transition-all duration-1000 ease-out ${claim.confidenceScore > 7 ? 'bg-emerald-400' : 'bg-primary-400'}`}
+                style={{ width: `${claim.confidenceScore * 10}%` }}
+            ></div>
+         </div>
+         <span className="text-xs font-semibold text-slate-400 whitespace-nowrap">Conf: {claim.confidenceScore}/10</span>
+      </div>
+    </div>
+  );
+};
+
+export const Dashboard: React.FC<DashboardProps> = ({ result }) => {
+  return (
+    <div className="space-y-8 animate-fade-in-up">
+      {/* Top Row: Scores & Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Score Card */}
+        <div className="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-100 col-span-1 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-10">
+             <svg xmlns="http://www.w3.org/2000/svg" className="h-32 w-32 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+             </svg>
+          </div>
+          <h3 className="text-lg font-bold text-slate-800 mb-2 relative z-10">Factual Accuracy</h3>
+          <ScoreGauge score={result.accuracyRating} />
+          <div className="mt-2 text-center relative z-10">
+             <span className={`inline-flex items-center px-4 py-1.5 rounded-full text-sm font-bold shadow-sm
+                ${result.overallSentiment === 'Positive' ? 'bg-green-100 text-green-700' : 
+                  result.overallSentiment === 'Negative' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'}`}>
+                Sentiment: {result.overallSentiment}
+             </span>
+          </div>
+        </div>
+
+        {/* Summary Card */}
+        <div className="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-100 col-span-1 md:col-span-2 flex flex-col relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-400 to-accent-500"></div>
+          <h3 className="text-xl font-bold text-slate-800 mb-4">Executive Analysis</h3>
+          <p className="text-slate-600 leading-relaxed flex-grow text-lg">{result.summary}</p>
+          
+          {result.sources.length > 0 && (
+            <div className="mt-8 pt-6 border-t border-slate-100">
+              <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-3">Verified Sources</h4>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {result.sources.slice(0, 4).map((source, idx) => (
+                  <li key={idx}>
+                    <a href={source.uri} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50 transition-colors group">
+                       <span className="bg-primary-100 text-primary-600 p-1.5 rounded-md">
+                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                         </svg>
+                       </span>
+                       <span className="text-sm text-slate-600 group-hover:text-primary-600 font-medium truncate">
+                        {source.title}
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Claims Analysis */}
+        <div className="space-y-5">
+          <h3 className="text-2xl font-extrabold text-slate-900 flex items-center gap-3">
+             <div className="bg-primary-100 p-2 rounded-xl">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+             </div>
+            Verified Claims
+          </h3>
+          <div className="space-y-4">
+            {result.claims.map((claim, idx) => (
+              <ClaimCard key={idx} claim={claim} />
+            ))}
+          </div>
+        </div>
+
+        {/* Comment Analysis */}
+        {result.commentAnalysis && (
+          <div className="space-y-5">
+             <h3 className="text-2xl font-extrabold text-slate-900 flex items-center gap-3">
+                <div className="bg-purple-100 p-2 rounded-xl">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+                    </svg>
+                </div>
+                Discourse Analysis
+             </h3>
+             <div className="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-100">
+                <div className="flex justify-between items-center mb-6">
+                   <span className="text-sm font-bold text-slate-400 uppercase tracking-wide">Overall Sentiment</span>
+                   <span className={`px-3 py-1.5 rounded-lg text-sm font-bold ${
+                      result.commentAnalysis.overallSentiment === 'Polarized' ? 'bg-orange-100 text-orange-800' : 
+                      result.commentAnalysis.overallSentiment === 'Positive' ? 'bg-emerald-100 text-emerald-800' :
+                      result.commentAnalysis.overallSentiment === 'Negative' ? 'bg-red-100 text-red-800' :
+                      'bg-slate-100 text-slate-800'
+                   }`}>
+                      {result.commentAnalysis.overallSentiment}
+                   </span>
+                </div>
+                
+                <p className="text-slate-700 text-base mb-8 leading-relaxed font-medium">{result.commentAnalysis.summary}</p>
+
+                <div className="grid grid-cols-2 gap-4 mb-8">
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <span className="text-xs text-slate-400 font-bold uppercase tracking-wide block mb-2">Bot Probability</span>
+                        <div className="flex items-end gap-3">
+                            <span className="text-3xl font-extrabold text-slate-800">{result.commentAnalysis.botProbabilityScore}</span>
+                            <span className="text-xs font-semibold text-slate-500 mb-1.5 bg-white px-2 py-0.5 rounded-full border border-slate-200">
+                                {result.commentAnalysis.botProbabilityScore > 6 ? 'High Risk' : 'Low Risk'}
+                            </span>
+                        </div>
+                        <div className="w-full bg-slate-200 h-1.5 rounded-full mt-3 overflow-hidden">
+                             <div className={`h-full rounded-full ${result.commentAnalysis.botProbabilityScore > 6 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${result.commentAnalysis.botProbabilityScore * 10}%` }}></div>
+                        </div>
+                    </div>
+                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <span className="text-xs text-slate-400 font-bold uppercase tracking-wide block mb-2">Logical Fallacies</span>
+                        <div className="flex flex-wrap gap-1.5">
+                            {result.commentAnalysis.logicalFallacies.length > 0 ? (
+                                result.commentAnalysis.logicalFallacies.slice(0,3).map((f, i) => (
+                                    <span key={i} className="text-xs font-semibold bg-red-100 text-red-700 px-2 py-1 rounded-md">{f}</span>
+                                ))
+                            ) : (
+                                <span className="text-sm font-medium text-slate-500 italic">None detected</span>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Dominant Emotions</span>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                        {result.commentAnalysis.dominantEmotions.map((emotion, idx) => (
+                             <span key={idx} className="bg-purple-50 text-purple-700 border border-purple-100 px-3 py-1.5 rounded-full text-sm font-semibold">
+                                {emotion}
+                             </span>
+                        ))}
+                    </div>
+                </div>
+             </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
