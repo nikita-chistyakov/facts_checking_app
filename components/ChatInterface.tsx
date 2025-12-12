@@ -72,7 +72,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ chatSession }) => 
         className={`fixed bottom-6 right-6 w-96 bg-white rounded-3xl shadow-2xl shadow-slate-400/20 border border-slate-100 flex flex-col z-50 animate-fade-in-up overflow-hidden ring-1 ring-slate-900/5 transition-all duration-300 ease-in-out ${isMinimized ? 'h-16' : 'h-[550px]'}`}
     >
       <div 
-        className="p-4 bg-gradient-to-r from-primary-600 to-primary-500 flex justify-between items-center shadow-md cursor-pointer hover:brightness-110 transition-all h-16"
+        className="p-4 bg-gradient-to-r from-primary-600 to-primary-500 flex justify-between items-center shadow-md cursor-pointer hover:brightness-110 transition-all h-16 shrink-0"
         onClick={() => setIsMinimized(!isMinimized)}
       >
         <h3 className="font-bold text-white flex items-center gap-2 select-none">
@@ -106,8 +106,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ chatSession }) => 
         </div>
       </div>
 
-      <div className={`flex-1 flex flex-col transition-opacity duration-200 ${isMinimized ? 'opacity-0 invisible' : 'opacity-100 visible'}`}>
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+      <div className={`flex-1 flex flex-col min-h-0 transition-opacity duration-200 ${isMinimized ? 'opacity-0 invisible' : 'opacity-100 visible'}`}>
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 min-h-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300">
             {messages.map((msg) => (
             <div
                 key={msg.id}
@@ -136,7 +136,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ chatSession }) => 
             <div ref={messagesEndRef} />
         </div>
 
-        <form onSubmit={handleSend} className="p-4 bg-white border-t border-slate-100">
+        <form onSubmit={handleSend} className="p-4 bg-white border-t border-slate-100 shrink-0">
             <div className="flex gap-2 relative">
             <input
                 type="text"
