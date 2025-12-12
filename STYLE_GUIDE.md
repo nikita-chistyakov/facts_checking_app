@@ -1,6 +1,6 @@
-# FCKTY Design System & Style Guide
+# INFAKT Design System & Style Guide
 
-This document serves as the single source of truth for the visual language of FCKTY and related future applications. The design philosophy focuses on **trust, clarity, and modern aesthetics**, utilizing a clean glassmorphism approach with vibrant but controlled data visualization colors.
+This document serves as the single source of truth for the visual language of INFAKT and related future applications. The design philosophy focuses on **trust, clarity, and modern aesthetics**, utilizing a clean glassmorphism approach with vibrant but controlled data visualization colors.
 
 ---
 

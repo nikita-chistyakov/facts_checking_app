@@ -4,7 +4,7 @@ import { AnalysisResult } from '../types';
 const getClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const ANALYSIS_SYSTEM_PROMPT = `
-You are FCKTY, an elite Fact-Checking and Media Analysis Engine. 
+You are INFAKT, an elite Fact-Checking and Media Analysis Engine. 
 Your core directive is RIGOROUS TRUTH and EXHAUSTIVE RESEARCH.
 
 You will be provided with a YouTube Video Title, Author, and URL.
@@ -144,7 +144,7 @@ export const createChatSession = () => {
   return ai.chats.create({
     model: 'gemini-2.5-flash',
     config: {
-      systemInstruction: "You are FCKTY, a helpful assistant explaining the fact-checking analysis you just performed. Answer follow-up questions about the claims, sentiment, and sources. Be concise and objective.",
+      systemInstruction: "You are INFAKT, a helpful assistant explaining the fact-checking analysis you just performed. Answer follow-up questions about the claims, sentiment, and sources. Be concise and objective.",
     },
   });
 };

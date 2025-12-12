@@ -81,7 +81,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ chatSession }) => 
                     <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
                 </svg>
             </div>
-            FCKTY Assistant
+            INFAKT Assistant
         </h3>
         <div className="flex items-center gap-3">
             <span className="text-[10px] font-bold text-primary-600 bg-white px-3 py-1 rounded-full uppercase tracking-wider select-none shadow-sm">Online</span>

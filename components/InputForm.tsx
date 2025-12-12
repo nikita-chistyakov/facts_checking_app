@@ -42,7 +42,7 @@ export const InputForm: React.FC<InputFormProps> = ({ onAnalyze, isLoading }) =>
                 </div>
             </div>
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 ml-1">
-                FCKTY will automatically search for the video's transcript and public comments to perform the analysis.
+                INFAKT will automatically search for the video's transcript and public comments to perform the analysis.
             </p>
           </div>
           

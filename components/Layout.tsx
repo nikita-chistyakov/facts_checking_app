@@ -26,7 +26,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, theme, toggleTheme }) 
                 </svg>
               </div>
               <span className="font-extrabold text-2xl tracking-tight text-slate-900 dark:text-white">
-                FCKTY
+                INFAKT
               </span>
             </div>
             <div className="flex items-center gap-4">

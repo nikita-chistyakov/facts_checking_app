@@ -1,8 +1,8 @@
-# FCKTY - The Narrative Fact-Checker
+# INFAKT - The Narrative Fact-Checker
 
-**FCKTY** is an advanced AI-powered fact-checking and sentiment analysis engine designed to verify claims and analyze public discourse surrounding YouTube videos. Leveraging **Google Gemini 2.5** with **Search Grounding**, it automatically scrapes video context and community reactions to provide a rigorous truth rating and detecting logical fallacies.
+**INFAKT** is an advanced AI-powered fact-checking and sentiment analysis engine designed to verify claims and analyze public discourse surrounding YouTube videos. Leveraging **Google Gemini 2.5** with **Search Grounding**, it automatically scrapes video context and community reactions to provide a rigorous truth rating and detecting logical fallacies.
 
-![FCKTY Dashboard Preview](https://via.placeholder.com/1200x600?text=FCKTY+Dashboard+Preview)
+![INFAKT Dashboard Preview](https://via.placeholder.com/1200x600?text=INFAKT+Dashboard+Preview)
 
 ## 🚀 Features
 
@@ -74,7 +74,7 @@ VITE_API_KEY=your_api_key_here
     *   Check the **Trust Score** and **Executive Summary**.
     *   Read through **Verified Claims** to see which specific points were True, False, or Misleading.
     *   Analyze the **Discourse** section to understand how the community is reacting.
-4.  **Ask Questions**: Use the **FCKTY Assistant** at the bottom right to ask specific questions like *"Why was the claim about inflation marked misleading?"*
+4.  **Ask Questions**: Use the **INFAKT Assistant** at the bottom right to ask specific questions like *"Why was the claim about inflation marked misleading?"*
 
 ## 📂 Project Structure
 

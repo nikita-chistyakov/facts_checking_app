@@ -75,7 +75,7 @@ const App: React.FC = () => {
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 via-primary-500 to-accent-500 animate-gradient-x">The Narrative.</span>
             </h1>
             <p className="text-xl md:text-2xl text-slate-500 dark:text-slate-400 font-medium max-w-2xl mx-auto leading-relaxed transition-colors duration-300">
-              FCKTY automatically scrapes video transcripts and public discourse to detect fallacies and verify claims in seconds.
+              INFAKT automatically scrapes video transcripts and public discourse to detect fallacies and verify claims in seconds.
             </p>
         </section>
 
