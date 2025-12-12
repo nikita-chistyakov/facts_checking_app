@@ -18,6 +18,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ chatSession }) => 
   ]);
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -25,8 +26,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ chatSession }) => 
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (!isMinimized) {
+      scrollToBottom();
+    }
+  }, [messages, isMinimized]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,9 +68,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ chatSession }) => 
   if (!chatSession) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 w-96 bg-white rounded-3xl shadow-2xl shadow-slate-400/20 border border-slate-100 flex flex-col h-[550px] z-50 animate-fade-in-up overflow-hidden ring-1 ring-slate-900/5">
-      <div className="p-4 bg-gradient-to-r from-primary-600 to-primary-500 flex justify-between items-center shadow-md">
-        <h3 className="font-bold text-white flex items-center gap-2">
+    <div 
+        className={`fixed bottom-6 right-6 w-96 bg-white rounded-3xl shadow-2xl shadow-slate-400/20 border border-slate-100 flex flex-col z-50 animate-fade-in-up overflow-hidden ring-1 ring-slate-900/5 transition-all duration-300 ease-in-out ${isMinimized ? 'h-16' : 'h-[550px]'}`}
+    >
+      <div 
+        className="p-4 bg-gradient-to-r from-primary-600 to-primary-500 flex justify-between items-center shadow-md cursor-pointer hover:brightness-110 transition-all h-16"
+        onClick={() => setIsMinimized(!isMinimized)}
+      >
+        <h3 className="font-bold text-white flex items-center gap-2 select-none">
             <div className="bg-white/20 p-1.5 rounded-lg">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
@@ -75,58 +83,80 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ chatSession }) => 
             </div>
             FCKTY Assistant
         </h3>
-        <span className="text-[10px] font-bold text-primary-600 bg-white px-2 py-1 rounded-full uppercase tracking-wider">Online</span>
+        <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold text-primary-600 bg-white px-2 py-1 rounded-full uppercase tracking-wider select-none">Online</span>
+            <button 
+                type="button"
+                className="text-white hover:bg-white/20 p-1 rounded-full transition-colors focus:outline-none"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setIsMinimized(!isMinimized);
+                }}
+            >
+                {isMinimized ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+                    </svg>
+                ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                )}
+            </button>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
+      <div className={`flex-1 flex flex-col transition-opacity duration-200 ${isMinimized ? 'opacity-0 invisible' : 'opacity-100 visible'}`}>
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+            {messages.map((msg) => (
             <div
-              className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
-                msg.role === 'user'
-                  ? 'bg-primary-600 text-white rounded-br-none'
-                  : 'bg-white text-slate-700 border border-slate-100 rounded-bl-none'
-              }`}
+                key={msg.id}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              {msg.text}
-            </div>
-          </div>
-        ))}
-        {isSending && (
-            <div className="flex justify-start">
-                <div className="bg-white border border-slate-100 rounded-2xl rounded-bl-none px-4 py-3 flex items-center gap-1.5 shadow-sm">
-                    <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce delay-75"></div>
-                    <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce delay-150"></div>
+                <div
+                className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
+                    msg.role === 'user'
+                    ? 'bg-primary-600 text-white rounded-br-none'
+                    : 'bg-white text-slate-700 border border-slate-100 rounded-bl-none'
+                }`}
+                >
+                {msg.text}
                 </div>
             </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
-
-      <form onSubmit={handleSend} className="p-4 bg-white border-t border-slate-100">
-        <div className="flex gap-2 relative">
-          <input
-            type="text"
-            className="flex-1 rounded-full border-slate-200 bg-slate-50 focus:bg-white shadow-inner focus:border-primary-500 focus:ring-2 focus:ring-primary-100 text-sm px-5 py-3 outline-none transition-all"
-            placeholder="Ask a follow-up..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-          />
-          <button
-            type="submit"
-            disabled={isSending || !input.trim()}
-            className="absolute right-2 top-1.5 bg-primary-600 hover:bg-primary-700 text-white p-2 rounded-full transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:shadow-none"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-            </svg>
-          </button>
+            ))}
+            {isSending && (
+                <div className="flex justify-start">
+                    <div className="bg-white border border-slate-100 rounded-2xl rounded-bl-none px-4 py-3 flex items-center gap-1.5 shadow-sm">
+                        <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce delay-75"></div>
+                        <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce delay-150"></div>
+                    </div>
+                </div>
+            )}
+            <div ref={messagesEndRef} />
         </div>
-      </form>
+
+        <form onSubmit={handleSend} className="p-4 bg-white border-t border-slate-100">
+            <div className="flex gap-2 relative">
+            <input
+                type="text"
+                className="flex-1 rounded-full border-slate-200 bg-slate-50 focus:bg-white shadow-inner focus:border-primary-500 focus:ring-2 focus:ring-primary-100 text-sm px-5 py-3 outline-none transition-all"
+                placeholder="Ask a follow-up..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+            />
+            <button
+                type="submit"
+                disabled={isSending || !input.trim()}
+                className="absolute right-2 top-1.5 bg-primary-600 hover:bg-primary-700 text-white p-2 rounded-full transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:shadow-none"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                </svg>
+            </button>
+            </div>
+        </form>
+      </div>
     </div>
   );
 };

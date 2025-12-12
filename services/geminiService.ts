@@ -5,22 +5,20 @@ const getClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const ANALYSIS_SYSTEM_PROMPT = `
 You are FCKTY, an elite Fact-Checking and Media Analysis Engine. 
-Your core directive is RIGOROUS TRUTH. You verify claims against established reality using Google Search.
-You NEVER make up information. If a claim is unverifiable, you state it explicitly.
+Your core directive is RIGOROUS TRUTH.
 
-You will be provided with a YouTube URL (for context search), a Transcript/Description, and optionally Comments.
+You will be provided with a YouTube Video Title, Author, and URL.
+**CRITICAL INSTRUCTION**: You must ONLY analyze the content of the SPECIFIC video identified by the Title. 
+DO NOT analyze other videos by the same author.
+DO NOT analyze the channel in general.
+If you cannot find the transcript or specifics for THIS exact video, admit it and return an accuracy rating of 0.
 
-Perform two functionalities:
-1. FACTUAL ANALYSIS:
-   - Identify key factual claims.
-   - Use Google Search to verify them.
-   - Rate the Overall Factual Accuracy from 1 (Complete Fabrication) to 10 (Highly Accurate).
-   - Determine overall content sentiment.
-
-2. COMMENT ANALYSIS (Expert Best Practices):
-   - Analyze the provided comments for sentiment distribution.
-   - Detect logical fallacies (e.g., ad hominem, strawman).
-   - Identify signs of coordinated inauthentic behavior (bot-like patterns) if obvious from text patterns.
+EXECUTION STEPS:
+1. **Target Identification**: Use Google Search to find the specific video by searching for its TITLE and AUTHOR.
+2. **Content Extraction**: Extract the transcript, summary, and key arguments of THIS specific video.
+3. **Discourse Extraction**: Search for comments and reactions specifically regarding THIS video title.
+4. **Fact Checking**: Verify the claims found in Step 2.
+5. **Sentiment Analysis**: Analyze the sentiment of the discourse.
 
 OUTPUT FORMAT:
 You must output a JSON object wrapped in a code block \`\`\`json ... \`\`\`.
@@ -28,7 +26,7 @@ The structure must be:
 {
   "accuracyRating": number, // 1-10
   "overallSentiment": "Positive" | "Negative" | "Neutral",
-  "summary": "string",
+  "summary": "string (Must start with: 'Analysis of [Video Title]: ...')",
   "claims": [
     {
       "claim": "string",
@@ -48,25 +46,55 @@ The structure must be:
 }
 `;
 
+// Helper to fetch video details to ground the AI before it even searches
+async function getVideoMetadata(url: string): Promise<{ title: string; author_name: string } | null> {
+  try {
+    // Using noembed to get oEmbed data without auth - supports YouTube
+    const response = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(url)}`);
+    const data = await response.json();
+    if (data.error || !data.title) return null;
+    return {
+      title: data.title,
+      author_name: data.author_name
+    };
+  } catch (e) {
+    console.warn("Failed to fetch video metadata", e);
+    return null;
+  }
+}
+
 export const analyzeContent = async (
-  url: string,
-  transcript: string,
-  comments: string
+  url: string
 ): Promise<AnalysisResult> => {
   const ai = getClient();
   
+  // 1. Attempt to get the actual title/author to prevent hallucination
+  const metadata = await getVideoMetadata(url);
+  
+  let contentContext = "";
+  if (metadata) {
+    contentContext = `
+    TARGET VIDEO TITLE: "${metadata.title}"
+    TARGET VIDEO AUTHOR: "${metadata.author_name}"
+    TARGET URL: ${url}
+    
+    INSTRUCTION: Perform a Google Search specifically for "${metadata.title}" transcript and reviews. Ensure you are analyzing THIS video and not a related one.
+    `;
+  } else {
+    contentContext = `
+    TARGET URL: ${url}
+    
+    INSTRUCTION: Extract the specific video title from the URL search results first, then analyze that specific video.
+    `;
+  }
+
   const prompt = `
-    Analyze the following content.
-    
-    URL: ${url}
-    
-    Video Content / Transcript:
-    ${transcript}
-    
-    Comments for Analysis:
-    ${comments || "No comments provided."}
-    
-    Use Google Search to verify the factual claims in the Video Content.
+    ${contentContext}
+
+    Please perform the "Web Scraping" and Analysis:
+    1. Search for the content of this specific video (Transcript/Summary).
+    2. Search for the comments/public reaction to this specific video.
+    3. Verify the claims and analyze the sentiment based on what you find.
   `;
 
   try {
@@ -76,9 +104,7 @@ export const analyzeContent = async (
       config: {
         systemInstruction: ANALYSIS_SYSTEM_PROMPT,
         tools: [{ googleSearch: {} }],
-        // We cannot use responseMimeType: 'application/json' with googleSearch tool currently
-        // so we rely on the prompt to format it as a code block.
-        temperature: 0.2, // Low temperature for factual consistency
+        temperature: 0.1, // Very low temperature for factual consistency
       },
     });
 
@@ -88,7 +114,7 @@ export const analyzeContent = async (
     const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/) || text.match(/```json([\s\S]*?)```/) || text.match(/{[\s\S]*}/);
     
     if (!jsonMatch) {
-      throw new Error("Failed to parse analysis results.");
+      throw new Error("Failed to parse analysis results. The video might be too obscure to analyze via Search.");
     }
 
     const rawJson = jsonMatch[1] || jsonMatch[0];

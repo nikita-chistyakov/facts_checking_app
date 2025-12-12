@@ -13,14 +13,15 @@ const App: React.FC = () => {
   const [chatSession, setChatSession] = useState<Chat | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleAnalyze = async (url: string, transcript: string, comments: string) => {
+  const handleAnalyze = async (url: string) => {
     setLoading(true);
     setError(null);
     setResult(null);
     setChatSession(null);
 
     try {
-      const data = await analyzeContent(url, transcript, comments);
+      // Analyze content - transcript and comments are now scraped/found via Search Grounding
+      const data = await analyzeContent(url);
       setResult(data);
 
       // Initialize chat session with context
@@ -31,6 +32,7 @@ const App: React.FC = () => {
         URL: ${url}
         Summary: ${data.summary}
         Claims: ${JSON.stringify(data.claims)}
+        Comment Analysis: ${JSON.stringify(data.commentAnalysis)}
         Please be ready to answer questions about this.
       `);
       setChatSession(newChat);
@@ -48,10 +50,10 @@ const App: React.FC = () => {
         <section className="text-center max-w-4xl mx-auto mb-16 pt-8">
             <h1 className="text-6xl md:text-7xl font-extrabold text-slate-900 tracking-tight mb-6">
               Fact Check <br/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 via-primary-500 to-accent-500 animate-gradient-x">Your Reality.</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 via-primary-500 to-accent-500 animate-gradient-x">The Narrative.</span>
             </h1>
             <p className="text-xl md:text-2xl text-slate-500 font-medium max-w-2xl mx-auto leading-relaxed">
-              FCKTY uses expert AI to detect fallacies, verify claims, and expose coordinated behavior in seconds.
+              FCKTY automatically scrapes video transcripts and public discourse to detect fallacies and verify claims in seconds.
             </p>
         </section>
 
