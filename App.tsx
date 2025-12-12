@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { InputForm } from './components/InputForm';
 import { Dashboard } from './components/Dashboard';
@@ -11,6 +11,29 @@ const App: React.FC = () => {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [chatSession, setChatSession] = useState<Chat | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // Theme State Management
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    // Check system preference or default to light
+    if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        return 'dark';
+    }
+    return 'light';
+  });
+
+  useEffect(() => {
+    // Apply theme class to html element
+    const root = window.document.documentElement;
+    if (theme === 'dark') {
+        root.classList.add('dark');
+    } else {
+        root.classList.remove('dark');
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
 
   const handleAnalyze = async (url: string) => {
     setLoading(true);
@@ -44,14 +67,14 @@ const App: React.FC = () => {
   };
 
   return (
-    <Layout>
+    <Layout theme={theme} toggleTheme={toggleTheme}>
       <div className="space-y-12 pb-20">
         <section className="text-center max-w-4xl mx-auto mb-16 pt-8">
-            <h1 className="text-6xl md:text-7xl font-extrabold text-slate-900 tracking-tight mb-6">
+            <h1 className="text-6xl md:text-7xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-6 transition-colors duration-300">
               Fact Check <br/>
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 via-primary-500 to-accent-500 animate-gradient-x">The Narrative.</span>
             </h1>
-            <p className="text-xl md:text-2xl text-slate-500 font-medium max-w-2xl mx-auto leading-relaxed">
+            <p className="text-xl md:text-2xl text-slate-500 dark:text-slate-400 font-medium max-w-2xl mx-auto leading-relaxed transition-colors duration-300">
               FCKTY automatically scrapes video transcripts and public discourse to detect fallacies and verify claims in seconds.
             </p>
         </section>
@@ -61,16 +84,16 @@ const App: React.FC = () => {
         </section>
 
         {error && (
-          <div className="max-w-3xl mx-auto bg-red-50 border border-red-100 p-6 rounded-2xl shadow-sm animate-fade-in-up">
+          <div className="max-w-3xl mx-auto bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900 p-6 rounded-2xl shadow-sm animate-fade-in-up">
             <div className="flex items-center">
-              <div className="flex-shrink-0 bg-red-100 p-2 rounded-full">
-                <svg className="h-6 w-6 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <div className="flex-shrink-0 bg-red-100 dark:bg-red-900/40 p-2 rounded-full">
+                <svg className="h-6 w-6 text-red-500 dark:text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
               </div>
               <div className="ml-4">
-                <h3 className="text-sm font-bold text-red-800">Analysis Failed</h3>
-                <p className="text-sm text-red-600 mt-1">{error}</p>
+                <h3 className="text-sm font-bold text-red-800 dark:text-red-300">Analysis Failed</h3>
+                <p className="text-sm text-red-600 dark:text-red-400 mt-1">{error}</p>
               </div>
             </div>
           </div>
@@ -78,7 +101,7 @@ const App: React.FC = () => {
 
         {result && (
           <div className="animate-fade-in-up">
-            <Dashboard result={result} chatSession={chatSession} />
+            <Dashboard result={result} chatSession={chatSession} isDark={theme === 'dark'} />
           </div>
         )}
       </div>

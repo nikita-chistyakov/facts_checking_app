@@ -14,8 +14,8 @@ export const InputForm: React.FC<InputFormProps> = ({ onAnalyze, isLoading }) =>
   };
 
   return (
-    <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl shadow-slate-200/50 border border-white overflow-hidden ring-1 ring-slate-900/5">
-      <div className="bg-slate-50/50 border-b border-slate-100 p-4 flex items-center justify-center gap-2 text-slate-500 text-sm font-medium">
+    <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 border border-white dark:border-slate-800 overflow-hidden ring-1 ring-slate-900/5 transition-colors duration-300">
+      <div className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 p-4 flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 text-sm font-medium">
          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
          </svg>
@@ -25,13 +25,13 @@ export const InputForm: React.FC<InputFormProps> = ({ onAnalyze, isLoading }) =>
       <form onSubmit={handleSubmit} className="p-8">
         <div className="space-y-6 animate-fade-in-up">
           <div className="relative">
-            <label className="block text-sm font-bold text-slate-700 mb-2 ml-1">YouTube URL to Analyze</label>
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 ml-1">YouTube URL to Analyze</label>
             <div className="relative">
                 <input
                   type="url"
                   required
                   placeholder="https://www.youtube.com/watch?v=..."
-                  className="w-full rounded-2xl border-slate-200 bg-slate-50 focus:bg-white shadow-inner focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition-all p-5 pl-12 outline-none font-medium text-lg text-slate-800"
+                  className="w-full rounded-2xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 focus:bg-white dark:focus:bg-slate-900 shadow-inner focus:border-primary-500 focus:ring-4 focus:ring-primary-100 dark:focus:ring-primary-900/30 transition-all p-5 pl-12 outline-none font-medium text-lg text-slate-800 dark:text-white placeholder:text-slate-400"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                 />
@@ -41,7 +41,7 @@ export const InputForm: React.FC<InputFormProps> = ({ onAnalyze, isLoading }) =>
                     </svg>
                 </div>
             </div>
-            <p className="text-xs text-slate-400 mt-2 ml-1">
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 ml-1">
                 FCKTY will automatically search for the video's transcript and public comments to perform the analysis.
             </p>
           </div>

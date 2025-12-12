@@ -69,7 +69,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ chatSession }) => 
 
   return (
     <div 
-        className={`relative w-full bg-white rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${isMinimized ? 'h-20' : 'h-[650px]'}`}
+        className={`relative w-full bg-white dark:bg-slate-900 rounded-3xl shadow-xl shadow-slate-200/40 dark:shadow-slate-950/40 border border-slate-100 dark:border-slate-800 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${isMinimized ? 'h-20' : 'h-[650px]'}`}
     >
       <div 
         className="p-5 bg-gradient-to-r from-primary-600 to-primary-500 flex justify-between items-center shadow-md cursor-pointer hover:brightness-110 transition-all h-20 shrink-0"
@@ -107,7 +107,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ chatSession }) => 
       </div>
 
       <div className={`flex-1 flex flex-col min-h-0 transition-opacity duration-200 ${isMinimized ? 'opacity-0 invisible' : 'opacity-100 visible'}`}>
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50 min-h-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300">
+        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50 dark:bg-slate-950 min-h-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300 dark:hover:[&::-webkit-scrollbar-thumb]:bg-slate-600">
             {messages.map((msg) => (
             <div
                 key={msg.id}
@@ -117,7 +117,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ chatSession }) => 
                 className={`max-w-[85%] rounded-2xl px-5 py-3.5 text-sm shadow-sm leading-relaxed ${
                     msg.role === 'user'
                     ? 'bg-primary-600 text-white rounded-br-none'
-                    : 'bg-white text-slate-700 border border-slate-100 rounded-bl-none'
+                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-700 rounded-bl-none'
                 }`}
                 >
                 {msg.text}
@@ -126,7 +126,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ chatSession }) => 
             ))}
             {isSending && (
                 <div className="flex justify-start">
-                    <div className="bg-white border border-slate-100 rounded-2xl rounded-bl-none px-5 py-4 flex items-center gap-1.5 shadow-sm">
+                    <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl rounded-bl-none px-5 py-4 flex items-center gap-1.5 shadow-sm">
                         <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce"></div>
                         <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce delay-75"></div>
                         <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce delay-150"></div>
@@ -136,11 +136,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ chatSession }) => 
             <div ref={messagesEndRef} />
         </div>
 
-        <form onSubmit={handleSend} className="p-4 bg-white border-t border-slate-100 shrink-0">
+        <form onSubmit={handleSend} className="p-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 shrink-0">
             <div className="flex gap-2 relative">
             <input
                 type="text"
-                className="flex-1 rounded-full border-slate-200 bg-slate-50 focus:bg-white shadow-inner focus:border-primary-500 focus:ring-2 focus:ring-primary-100 text-sm px-6 py-4 outline-none transition-all"
+                className="flex-1 rounded-full border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 focus:bg-white dark:focus:bg-slate-900 shadow-inner focus:border-primary-500 focus:ring-2 focus:ring-primary-100 dark:focus:ring-primary-900/30 text-sm px-6 py-4 outline-none transition-all text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600"
                 placeholder="Ask a follow-up..."
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
