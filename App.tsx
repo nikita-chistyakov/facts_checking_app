@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Layout } from './components/Layout';
 import { InputForm } from './components/InputForm';
 import { Dashboard } from './components/Dashboard';
-import { ChatInterface } from './components/ChatInterface';
 import { analyzeContent, createChatSession, sendMessageToChat } from './services/geminiService';
 import { AnalysisResult } from './types';
 import { Chat } from "@google/genai";
@@ -79,8 +78,7 @@ const App: React.FC = () => {
 
         {result && (
           <div className="animate-fade-in-up">
-            <Dashboard result={result} />
-            <ChatInterface chatSession={chatSession} />
+            <Dashboard result={result} chatSession={chatSession} />
           </div>
         )}
       </div>

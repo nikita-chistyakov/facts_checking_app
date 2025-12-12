@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { AnalysisResult, FactCheckClaim } from '../types';
 import { ResponsiveContainer, RadialBarChart, RadialBar, Tooltip as RechartsTooltip, Legend } from 'recharts';
+import { Chat } from "@google/genai";
+import { ChatInterface } from './ChatInterface';
 
 interface DashboardProps {
   result: AnalysisResult;
+  chatSession: Chat | null;
 }
 
 const InfoTooltip: React.FC<{ content: React.ReactNode; align?: 'left' | 'center' | 'right' }> = ({ content, align = 'center' }) => {
@@ -127,10 +130,10 @@ const ClaimCard: React.FC<{ claim: FactCheckClaim }> = ({ claim }) => {
   );
 };
 
-export const Dashboard: React.FC<DashboardProps> = ({ result }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ result, chatSession }) => {
   return (
     <div className="space-y-8 animate-fade-in-up">
-      {/* Top Row: Scores & Summary */}
+      {/* 1. Top Row: Scores & Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Score Card */}
         <div className="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-100 col-span-1 relative">
@@ -212,121 +215,136 @@ export const Dashboard: React.FC<DashboardProps> = ({ result }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Claims Analysis */}
-        <div className="space-y-5">
-          <h3 className="text-2xl font-extrabold text-slate-900 flex items-center gap-3">
-             <div className="bg-primary-100 p-2 rounded-xl">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                </svg>
-             </div>
+      {/* 2. Verified Claims (Full Width) */}
+      <div className="space-y-5">
+        <h3 className="text-2xl font-extrabold text-slate-900 flex items-center gap-3">
+            <div className="bg-primary-100 p-2 rounded-xl">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+            </svg>
+            </div>
             Verified Claims
-          </h3>
-          <div className="space-y-4">
+        </h3>
+        <div className="space-y-4">
             {result.claims.map((claim, idx) => (
-              <ClaimCard key={idx} claim={claim} />
+            <ClaimCard key={idx} claim={claim} />
             ))}
-          </div>
         </div>
+      </div>
 
-        {/* Comment Analysis */}
+      {/* 3. Bottom Row: Discourse Analysis & Chat */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Left Col: Discourse Analysis */}
         {result.commentAnalysis && (
-          <div className="space-y-5">
+            <div className="space-y-5">
+                <h3 className="text-2xl font-extrabold text-slate-900 flex items-center gap-3">
+                    <div className="bg-purple-100 p-2 rounded-xl">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+                        </svg>
+                    </div>
+                    Discourse Analysis
+                </h3>
+                <div className="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-100 h-full">
+                    <div className="flex justify-between items-center mb-6">
+                        <span className="text-sm font-bold text-slate-400 uppercase tracking-wide">Overall Sentiment</span>
+                        <span className={`px-3 py-1.5 rounded-lg text-sm font-bold ${
+                            result.commentAnalysis.overallSentiment === 'Polarized' ? 'bg-orange-100 text-orange-800' : 
+                            result.commentAnalysis.overallSentiment === 'Positive' ? 'bg-emerald-100 text-emerald-800' :
+                            result.commentAnalysis.overallSentiment === 'Negative' ? 'bg-red-100 text-red-800' :
+                            'bg-slate-100 text-slate-800'
+                        }`}>
+                            {result.commentAnalysis.overallSentiment}
+                        </span>
+                    </div>
+                    
+                    <p className="text-slate-700 text-base mb-8 leading-relaxed font-medium">{result.commentAnalysis.summary}</p>
+
+                    <div className="grid grid-cols-2 gap-4 mb-8">
+                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 relative">
+                            <div className="flex items-center gap-1 mb-2">
+                                <span className="text-xs text-slate-400 font-bold uppercase tracking-wide">Bot Probability</span>
+                                <InfoTooltip 
+                                    align="left"
+                                    content={
+                                        <div>
+                                            <p className="mb-2 font-bold text-slate-200">Is the conversation real?</p>
+                                            <p className="mb-2">Calculated by analyzing comment timing, repetition, and linguistic patterns typical of automated scripts.</p>
+                                            <ul className="list-disc pl-3 space-y-1 text-slate-300">
+                                                <li><span className="text-red-400 font-bold">High:</span> Likely astroturfing or spam.</li>
+                                                <li><span className="text-emerald-400 font-bold">Low:</span> Organic human discussion.</li>
+                                            </ul>
+                                        </div>
+                                    } 
+                                />
+                            </div>
+                            <div className="flex items-end gap-3">
+                                <span className="text-3xl font-extrabold text-slate-800">{result.commentAnalysis.botProbabilityScore}</span>
+                                <span className="text-xs font-semibold text-slate-500 mb-1.5 bg-white px-2 py-0.5 rounded-full border border-slate-200">
+                                    {result.commentAnalysis.botProbabilityScore > 6 ? 'High Risk' : 'Low Risk'}
+                                </span>
+                            </div>
+                            <div className="w-full bg-slate-200 h-1.5 rounded-full mt-3 overflow-hidden">
+                                <div className={`h-full rounded-full ${result.commentAnalysis.botProbabilityScore > 6 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${result.commentAnalysis.botProbabilityScore * 10}%` }}></div>
+                            </div>
+                        </div>
+                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                            <div className="flex items-center gap-1 mb-2">
+                                <span className="text-xs text-slate-400 font-bold uppercase tracking-wide">Logical Fallacies</span>
+                                <InfoTooltip 
+                                    align="right"
+                                    content={
+                                        <div>
+                                            <p className="mb-2 font-bold text-slate-200">Common Flaws in Reasoning</p>
+                                            <p className="mb-2">We scan comments for manipulative arguments that distract from the truth.</p>
+                                            <ul className="list-disc pl-3 space-y-1 text-slate-300">
+                                                <li><span className="text-white font-bold">Ad Hominem:</span> Attacking the person.</li>
+                                                <li><span className="text-white font-bold">Straw Man:</span> Distorting an argument.</li>
+                                                <li><span className="text-white font-bold">False Equivalence:</span> Comparing unrelated things.</li>
+                                            </ul>
+                                        </div>
+                                    } 
+                                />
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                                {result.commentAnalysis.logicalFallacies.length > 0 ? (
+                                    result.commentAnalysis.logicalFallacies.slice(0,3).map((f, i) => (
+                                        <span key={i} className="text-xs font-semibold bg-red-100 text-red-700 px-2 py-1 rounded-md">{f}</span>
+                                    ))
+                                ) : (
+                                    <span className="text-sm font-medium text-slate-500 italic">None detected</span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Dominant Emotions</span>
+                        <div className="flex flex-wrap gap-2 mt-3">
+                            {result.commentAnalysis.dominantEmotions.map((emotion, idx) => (
+                                <span key={idx} className="bg-purple-50 text-purple-700 border border-purple-100 px-3 py-1.5 rounded-full text-sm font-semibold">
+                                    {emotion}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )}
+        
+        {/* Right Col: Chat Interface */}
+        <div className="space-y-5">
+             {/* Use same header height spacer if needed or just a header to align */}
              <h3 className="text-2xl font-extrabold text-slate-900 flex items-center gap-3">
-                <div className="bg-purple-100 p-2 rounded-xl">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+                <div className="bg-emerald-100 p-2 rounded-xl">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                     </svg>
                 </div>
-                Discourse Analysis
-             </h3>
-             <div className="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-100">
-                <div className="flex justify-between items-center mb-6">
-                   <span className="text-sm font-bold text-slate-400 uppercase tracking-wide">Overall Sentiment</span>
-                   <span className={`px-3 py-1.5 rounded-lg text-sm font-bold ${
-                      result.commentAnalysis.overallSentiment === 'Polarized' ? 'bg-orange-100 text-orange-800' : 
-                      result.commentAnalysis.overallSentiment === 'Positive' ? 'bg-emerald-100 text-emerald-800' :
-                      result.commentAnalysis.overallSentiment === 'Negative' ? 'bg-red-100 text-red-800' :
-                      'bg-slate-100 text-slate-800'
-                   }`}>
-                      {result.commentAnalysis.overallSentiment}
-                   </span>
-                </div>
-                
-                <p className="text-slate-700 text-base mb-8 leading-relaxed font-medium">{result.commentAnalysis.summary}</p>
-
-                <div className="grid grid-cols-2 gap-4 mb-8">
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 relative">
-                        <div className="flex items-center gap-1 mb-2">
-                            <span className="text-xs text-slate-400 font-bold uppercase tracking-wide">Bot Probability</span>
-                            <InfoTooltip 
-                                align="left"
-                                content={
-                                    <div>
-                                        <p className="mb-2 font-bold text-slate-200">Is the conversation real?</p>
-                                        <p className="mb-2">Calculated by analyzing comment timing, repetition, and linguistic patterns typical of automated scripts.</p>
-                                        <ul className="list-disc pl-3 space-y-1 text-slate-300">
-                                            <li><span className="text-red-400 font-bold">High:</span> Likely astroturfing or spam.</li>
-                                            <li><span className="text-emerald-400 font-bold">Low:</span> Organic human discussion.</li>
-                                        </ul>
-                                    </div>
-                                } 
-                            />
-                        </div>
-                        <div className="flex items-end gap-3">
-                            <span className="text-3xl font-extrabold text-slate-800">{result.commentAnalysis.botProbabilityScore}</span>
-                            <span className="text-xs font-semibold text-slate-500 mb-1.5 bg-white px-2 py-0.5 rounded-full border border-slate-200">
-                                {result.commentAnalysis.botProbabilityScore > 6 ? 'High Risk' : 'Low Risk'}
-                            </span>
-                        </div>
-                        <div className="w-full bg-slate-200 h-1.5 rounded-full mt-3 overflow-hidden">
-                             <div className={`h-full rounded-full ${result.commentAnalysis.botProbabilityScore > 6 ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${result.commentAnalysis.botProbabilityScore * 10}%` }}></div>
-                        </div>
-                    </div>
-                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                        <div className="flex items-center gap-1 mb-2">
-                             <span className="text-xs text-slate-400 font-bold uppercase tracking-wide">Logical Fallacies</span>
-                             <InfoTooltip 
-                                align="right"
-                                content={
-                                    <div>
-                                        <p className="mb-2 font-bold text-slate-200">Common Flaws in Reasoning</p>
-                                        <p className="mb-2">We scan comments for manipulative arguments that distract from the truth.</p>
-                                        <ul className="list-disc pl-3 space-y-1 text-slate-300">
-                                            <li><span className="text-white font-bold">Ad Hominem:</span> Attacking the person.</li>
-                                            <li><span className="text-white font-bold">Straw Man:</span> Distorting an argument.</li>
-                                            <li><span className="text-white font-bold">False Equivalence:</span> Comparing unrelated things.</li>
-                                        </ul>
-                                    </div>
-                                } 
-                            />
-                        </div>
-                        <div className="flex flex-wrap gap-1.5">
-                            {result.commentAnalysis.logicalFallacies.length > 0 ? (
-                                result.commentAnalysis.logicalFallacies.slice(0,3).map((f, i) => (
-                                    <span key={i} className="text-xs font-semibold bg-red-100 text-red-700 px-2 py-1 rounded-md">{f}</span>
-                                ))
-                            ) : (
-                                <span className="text-sm font-medium text-slate-500 italic">None detected</span>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Dominant Emotions</span>
-                    <div className="flex flex-wrap gap-2 mt-3">
-                        {result.commentAnalysis.dominantEmotions.map((emotion, idx) => (
-                             <span key={idx} className="bg-purple-50 text-purple-700 border border-purple-100 px-3 py-1.5 rounded-full text-sm font-semibold">
-                                {emotion}
-                             </span>
-                        ))}
-                    </div>
-                </div>
-             </div>
-          </div>
-        )}
+                Ask Assistant
+            </h3>
+            <ChatInterface chatSession={chatSession} />
+        </div>
       </div>
     </div>
   );
