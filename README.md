@@ -4,6 +4,8 @@
 
 [FCKTY App Preview](https://ai.studio/apps/drive/1xm8E54rdvOBNjEg7ZI0evOl_1OMItHyT)
 
+<a href="https://ai.studio/apps/drive/1xm8E54rdvOBNjEg7ZI0evOl_1OMItHyT" target="_blank">FCKTY App Preview</a>
+
 ## 🚀 Features
 
 *   **Automated Truth Verification**: Takes a YouTube URL, retrieves the transcript/summary, and cross-references specific claims against real-time Google Search results.
