@@ -2,8 +2,6 @@
 
 **FCKTY** is an advanced AI-powered fact-checking and sentiment analysis engine designed to verify claims and analyze public discourse surrounding YouTube videos. Leveraging **Google Gemini 2.5** with **Search Grounding**, it automatically scrapes video context and community reactions to provide a rigorous truth rating and detecting logical fallacies.
 
-[FCKTY App Preview](https://ai.studio/apps/drive/1xm8E54rdvOBNjEg7ZI0evOl_1OMItHyT) (Right-Click to open in a new tab)
-
 <a href="https://ai.studio/apps/drive/1xm8E54rdvOBNjEg7ZI0evOl_1OMItHyT" target="_blank">FCKTY App Preview</a> (Right-Click to open in a new tab)
 
 
