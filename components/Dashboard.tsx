@@ -175,11 +175,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, chatSession, isDar
           <ScoreGauge score={result.accuracyRating} isDark={isDark} />
           
           <div className="mt-2 text-center relative z-10">
-             <span className={`inline-flex items-center px-4 py-1.5 rounded-full text-sm font-bold shadow-sm border border-transparent
-                ${result.overallSentiment === 'Positive' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' : 
-                  result.overallSentiment === 'Negative' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'}`}>
-                Sentiment: {result.overallSentiment}
-             </span>
+             <div className="inline-flex items-center gap-2">
+                 <span className={`inline-flex items-center px-4 py-1.5 rounded-full text-sm font-bold shadow-sm border border-transparent
+                    ${result.overallSentiment === 'Positive' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' : 
+                      result.overallSentiment === 'Negative' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'}`}>
+                    Video Tone: {result.overallSentiment}
+                 </span>
+                 <InfoTooltip 
+                    align="center"
+                    content={
+                        <div>
+                            <p className="mb-2 font-bold text-slate-200">Video Tone Analysis</p>
+                            <p>Evaluates the emotional delivery and rhetoric used by the speaker in the video itself.</p>
+                        </div>
+                    }
+                 />
+             </div>
           </div>
         </div>
 
@@ -278,7 +289,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, chatSession, isDar
                 </h3>
                 <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-xl shadow-slate-200/40 dark:shadow-slate-950/40 border border-slate-100 dark:border-slate-800 h-full transition-colors">
                     <div className="flex justify-between items-center mb-6">
-                        <span className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Overall Sentiment</span>
+                        <div className="flex items-center gap-1">
+                            <span className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Community Sentiment</span>
+                            <InfoTooltip 
+                                align="left"
+                                content={
+                                    <div>
+                                        <p className="mb-2 font-bold text-slate-200">Sentiment Analysis Logic</p>
+                                        <p className="mb-2">We analyze the emotional tone of public comments, replies, and social mentions to gauge community reaction.</p>
+                                        <ul className="list-disc pl-3 space-y-1 text-slate-300">
+                                            <li><span className="text-emerald-400 font-bold">Positive:</span> Supportive, constructive, or agreeing.</li>
+                                            <li><span className="text-red-400 font-bold">Negative:</span> Critical, hostile, or opposing.</li>
+                                            <li><span className="text-amber-400 font-bold">Polarized:</span> Sharp division between opposing groups.</li>
+                                            <li><span className="text-slate-400 font-bold">Neutral:</span> Objective or indifferent.</li>
+                                        </ul>
+                                    </div>
+                                } 
+                            />
+                        </div>
                         <span className={`px-3 py-1.5 rounded-lg text-sm font-bold border border-transparent ${
                             result.commentAnalysis.overallSentiment === 'Polarized' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800' : 
                             result.commentAnalysis.overallSentiment === 'Positive' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800' :

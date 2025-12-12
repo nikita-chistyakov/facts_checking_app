@@ -5,35 +5,30 @@ const getClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const ANALYSIS_SYSTEM_PROMPT = `
 You are FCKTY, an elite Fact-Checking and Media Analysis Engine. 
-Your core directive is RIGOROUS TRUTH.
+Your core directive is RIGOROUS TRUTH and EXHAUSTIVE RESEARCH.
 
 You will be provided with a YouTube Video Title, Author, and URL.
-**CRITICAL INSTRUCTION**: You must ONLY analyze the content of the SPECIFIC video identified by the Title. 
-DO NOT analyze other videos by the same author.
-DO NOT analyze the channel in general.
-If you cannot find the transcript or specifics for THIS exact video, admit it and return an accuracy rating of 0.
 
-EXECUTION STEPS:
-1. **Target Identification**: Use Google Search to find the specific video by searching for its TITLE and AUTHOR.
-2. **Content Extraction**: Extract the transcript, summary, and key arguments of THIS specific video.
-3. **Discourse Extraction**: Search for comments and reactions specifically regarding THIS video title.
-4. **Fact Checking**: Verify the claims found in Step 2.
-5. **Sentiment Analysis**: Analyze the sentiment of the discourse.
+**CORE PROTOCOLS:**
+1.  **Deep Search**: Do not rely on a single search query. You must perform multiple searches to gather transcripts, summaries, and distinct viewpoints.
+2.  **Source Exhaustiveness**: When verifying claims, you must search for *primary sources* (government data, academic papers, direct quotes) rather than just news recaps. If a source is weak, search again.
+3.  **Discourse Breadth**: When analyzing sentiment, look beyond the immediate video page. Search for discussions on Reddit, Twitter/X, and niche forums to find critical or polarized perspectives.
+4.  **Target Integrity**: ONLY analyze the specific video identified. Do not hallucinate content from other videos by the same author.
 
-OUTPUT FORMAT:
+**OUTPUT FORMAT:**
 You must output a JSON object wrapped in a code block \`\`\`json ... \`\`\`.
 The structure must be:
 {
   "accuracyRating": number, // 1-10
   "overallSentiment": "Positive" | "Negative" | "Neutral",
   "summary": "string (Must start with: 'Analysis of [Video Title]: ...')",
-  "keyTakeaways": ["string", "string", "string"], // 3-5 concise, scannable bullet points summarizing the core narrative or findings.
+  "keyTakeaways": ["string", "string", "string"], // 3-5 concise, scannable bullet points.
   "claims": [
     {
       "claim": "string",
       "verdict": "True" | "False" | "Misleading" | "Unverified" | "Mixed",
       "confidenceScore": number, // 0-10
-      "explanation": "string"
+      "explanation": "string (Cite specific data or contradictions found)"
     }
   ],
   "commentAnalysis": {
@@ -41,7 +36,7 @@ The structure must be:
     "sentimentScore": number, // -1 to 1
     "dominantEmotions": ["string"],
     "logicalFallacies": ["string"],
-    "botProbabilityScore": number, // 0-10 rating of how artificial the discourse feels
+    "botProbabilityScore": number, // 0-10
     "summary": "string"
   }
 }
@@ -92,10 +87,15 @@ export const analyzeContent = async (
   const prompt = `
     ${contentContext}
 
-    Please perform the "Web Scraping" and Analysis:
-    1. Search for the content of this specific video (Transcript/Summary).
-    2. Search for the comments/public reaction to this specific video.
-    3. Verify the claims and analyze the sentiment based on what you find.
+    **EXECUTE DEEP RESEARCH PLAN:**
+
+    1. **Content Retrieval**: Aggressively search for the full transcript, detailed summaries, or comprehensive reviews of this specific video.
+    2. **Discourse Mining**: Search for "Reddit [Video Title]", "Twitter reaction [Video Title]", and "forum discussion [Video Title]" to find diverse, organic user feedback beyond just YouTube top comments.
+    3. **Rigorous Fact-Checking**: For every major claim identified in the video:
+        - Search specifically for that claim combined with keywords like "debunked", "fact check", "study", "statistics".
+        - Prioritize primary sources (official statistics, academic papers) over secondary news.
+        - If verified sources are scarce, explicitly state this in the 'explanation' and set the verdict to 'Unverified'.
+    4. **Synthesis**: Combine these into the AnalysisResult JSON.
   `;
 
   try {
@@ -105,7 +105,8 @@ export const analyzeContent = async (
       config: {
         systemInstruction: ANALYSIS_SYSTEM_PROMPT,
         tools: [{ googleSearch: {} }],
-        temperature: 0.1, // Very low temperature for factual consistency
+        // Enable thinking to allow the model to plan multi-step searches for better coverage
+        thinkingConfig: { thinkingBudget: 8192 },
       },
     });
 
