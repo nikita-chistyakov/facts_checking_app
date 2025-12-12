@@ -19,6 +19,7 @@ export interface AnalysisResult {
   accuracyRating: number; // 1 to 10
   overallSentiment: 'Positive' | 'Negative' | 'Neutral';
   summary: string;
+  keyTakeaways: string[]; // New field for scannable bullet points
   claims: FactCheckClaim[];
   commentAnalysis: CommentAnalysis | null;
   sources: { title: string; uri: string }[];

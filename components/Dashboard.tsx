@@ -182,28 +182,58 @@ export const Dashboard: React.FC<DashboardProps> = ({ result, chatSession }) => 
           </div>
         </div>
 
-        {/* Summary Card */}
-        <div className="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-100 col-span-1 md:col-span-2 flex flex-col relative">
-           <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-400 to-accent-500"></div>
-           </div>
+        {/* Summary Card (Updated for Readability) */}
+        <div className="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-100 col-span-1 md:col-span-2 flex flex-col relative overflow-hidden">
+           {/* Decorative Top Line */}
+           <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary-400 to-accent-500"></div>
           
-          <h3 className="text-xl font-bold text-slate-800 mb-4 relative z-10">Executive Analysis</h3>
-          <p className="text-slate-600 leading-relaxed flex-grow text-lg relative z-10">{result.summary}</p>
+          <h3 className="text-xl font-bold text-slate-800 mb-6 relative z-10 flex items-center gap-2">
+            Executive Analysis
+          </h3>
           
+          <p className="text-slate-600 leading-relaxed text-lg relative z-10 mb-8 font-medium">
+            {result.summary}
+          </p>
+          
+          {/* New Scannable Key Takeaways Section */}
+          {result.keyTakeaways && result.keyTakeaways.length > 0 && (
+            <div className="relative z-10 mb-8 bg-surface-50 rounded-2xl p-6 border border-slate-100 shadow-inner">
+                <h4 className="text-xs font-extrabold text-primary-700 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Core Insights
+                </h4>
+                <ul className="space-y-4">
+                    {result.keyTakeaways.map((point, i) => (
+                        <li key={i} className="flex items-start gap-3 text-slate-700">
+                            <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary-500 shrink-0 shadow-sm shadow-primary-300"></div>
+                            <span className="leading-snug">{point}</span>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+          )}
+          
+          {/* Verified Sources */}
           {result.sources.length > 0 && (
-            <div className="mt-8 pt-6 border-t border-slate-100 relative z-10">
-              <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-3">Verified Sources</h4>
+            <div className="mt-auto pt-6 border-t border-slate-100 relative z-10">
+              <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
+                  Verified Sources
+              </h4>
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {result.sources.slice(0, 4).map((source, idx) => (
                   <li key={idx}>
-                    <a href={source.uri} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50 transition-colors group">
-                       <span className="bg-primary-100 text-primary-600 p-1.5 rounded-md">
-                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <a href={source.uri} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50 transition-colors group border border-transparent hover:border-slate-100">
+                       <span className="bg-primary-50 text-primary-600 p-1.5 rounded-md group-hover:bg-primary-100 transition-colors">
+                         <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                          </svg>
                        </span>
-                       <span className="text-sm text-slate-600 group-hover:text-primary-600 font-medium truncate">
+                       <span className="text-sm text-slate-600 group-hover:text-primary-700 font-medium truncate transition-colors">
                         {source.title}
                       </span>
                     </a>

@@ -27,6 +27,7 @@ The structure must be:
   "accuracyRating": number, // 1-10
   "overallSentiment": "Positive" | "Negative" | "Neutral",
   "summary": "string (Must start with: 'Analysis of [Video Title]: ...')",
+  "keyTakeaways": ["string", "string", "string"], // 3-5 concise, scannable bullet points summarizing the core narrative or findings.
   "claims": [
     {
       "claim": "string",
@@ -127,6 +128,7 @@ export const analyzeContent = async (
 
     return {
       ...data,
+      keyTakeaways: data.keyTakeaways || [], // Ensure fallback if model omits it
       sources: sources as { title: string; uri: string }[],
     };
 
