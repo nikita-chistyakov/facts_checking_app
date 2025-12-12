@@ -2,9 +2,15 @@ import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 import { AnalysisResult } from '../types';
 
 const getClient = () => {
-  const apiKey = (window as any).env?.GEMINI_API_KEY || process.env.API_KEY;
+  const env = (window as any).env;
+  console.log("Debug: window.env is:", env);
+  const apiKey = env?.GEMINI_API_KEY || process.env.API_KEY;
+
   if (!apiKey) {
     console.error("API Key is missing! Make sure GEMINI_API_KEY is set in Cloud Run variables.");
+    console.error("Current window.env:", (window as any).env);
+  } else {
+    console.log("API Key found (length):", apiKey.length);
   }
   return new GoogleGenAI({ apiKey });
 };
