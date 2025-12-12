@@ -23,8 +23,12 @@ RUN rm -rf /usr/share/nginx/html/*
 # Copy built assets from the builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
+# Copy env.sh script
+COPY env.sh /docker-entrypoint.d/env.sh
+RUN chmod +x /docker-entrypoint.d/env.sh
+
 # Expose port 8080
 EXPOSE 8080
 
-# Start Nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Start Nginx (using shell form to allow variable expansion if needed, but here just running the script first)
+CMD ["/bin/sh", "-c", "/docker-entrypoint.d/env.sh && nginx -g 'daemon off;'"]
