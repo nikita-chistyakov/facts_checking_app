@@ -1,19 +1,7 @@
 import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 import { AnalysisResult } from '../types';
 
-const getClient = () => {
-  const env = (window as any).env;
-  console.log("Debug: window.env is:", env);
-  const apiKey = env?.GEMINI_API_KEY || process.env.API_KEY;
-
-  if (!apiKey) {
-    console.error("API Key is missing! Make sure GEMINI_API_KEY is set in Cloud Run variables.");
-    console.error("Current window.env:", (window as any).env);
-  } else {
-    console.log("API Key found (length):", apiKey.length);
-  }
-  return new GoogleGenAI({ apiKey });
-};
+const getClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const ANALYSIS_SYSTEM_PROMPT = `
 You are INFAKT, an elite Fact-Checking and Media Analysis Engine. 
@@ -75,10 +63,10 @@ export const analyzeContent = async (
   url: string
 ): Promise<AnalysisResult> => {
   const ai = getClient();
-
+  
   // 1. Attempt to get the actual title/author to prevent hallucination
   const metadata = await getVideoMetadata(url);
-
+  
   let contentContext = "";
   if (metadata) {
     contentContext = `
@@ -123,10 +111,10 @@ export const analyzeContent = async (
     });
 
     const text = response.text;
-
+    
     // Extract JSON from code block
     const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/) || text.match(/```json([\s\S]*?)```/) || text.match(/{[\s\S]*}/);
-
+    
     if (!jsonMatch) {
       throw new Error("Failed to parse analysis results. The video might be too obscure to analyze via Search.");
     }
@@ -162,6 +150,6 @@ export const createChatSession = () => {
 };
 
 export const sendMessageToChat = async (chat: Chat, message: string): Promise<string> => {
-  const response: GenerateContentResponse = await chat.sendMessage({ message });
-  return response.text || "I couldn't generate a response.";
+    const response: GenerateContentResponse = await chat.sendMessage({ message });
+    return response.text || "I couldn't generate a response.";
 };
