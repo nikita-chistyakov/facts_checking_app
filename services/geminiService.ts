@@ -1,52 +1,73 @@
-import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
+
+import { GoogleGenAI, Chat, GenerateContentResponse, Type } from "@google/genai";
 import { AnalysisResult } from '../types';
 
 const getClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-const ANALYSIS_SYSTEM_PROMPT = `
-You are INFAKT, an elite Fact-Checking and Media Analysis Engine. 
-Your core directive is RIGOROUS TRUTH and EXHAUSTIVE RESEARCH.
-
-**INPUT DATA SOURCE:**
-You may be provided with the ACTUAL TRANSCRIPT and COMMENTS fetched directly from the video. 
-1. If "TRANSCRIPT" is provided: Use it as the primary source for the 'accuracyRating', 'summary', and 'claims' analysis. Quote it directly.
-2. If "COMMENTS" are provided: Use them as the primary source for 'commentAnalysis'.
-3. If these are missing: Fall back to using Google Search to find this information.
-
-**CORE PROTOCOLS:**
-1.  **Deep Search**: Even if you have the transcript, you MUST perform Google Searches to verify the *claims* made in that transcript against external reality (academic papers, news, government data).
-2.  **Source Exhaustiveness**: When verifying claims, search for *primary sources* rather than just news recaps.
-3.  **Discourse Breadth**: When analyzing sentiment, look beyond the immediate comments provided. Search for "Reddit [Video Title]" or "Twitter reaction" if the provided comments seem one-sided.
-4.  **Target Integrity**: ONLY analyze the specific video identified.
-
-**OUTPUT FORMAT:**
-You must output a JSON object wrapped in a code block \`\`\`json ... \`\`\`.
-The structure must be:
-{
-  "accuracyRating": number, // 1-10
-  "overallSentiment": "Positive" | "Negative" | "Neutral",
-  "summary": "string (Must start with: 'Analysis of [Video Title]: ...')",
-  "keyTakeaways": ["string", "string", "string"], // 3-5 concise, scannable bullet points.
-  "claims": [
-    {
-      "claim": "string",
-      "verdict": "True" | "False" | "Misleading" | "Unverified" | "Mixed",
-      "confidenceScore": number, // 0-10
-      "explanation": "string (Cite specific data or contradictions found)"
+async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
+  let lastError: any;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      lastError = err;
+      const status = err?.status || 0;
+      const message = err?.message?.toLowerCase() || "";
+      
+      if (status === 503 || status === 429 || message.includes("overloaded") || message.includes("busy") || message.includes("resource has been exhausted")) {
+        const delay = Math.pow(2, i) * 1000 + (Math.random() * 500);
+        console.warn(`Model busy/rate limited. Retry ${i + 1}/${maxRetries}...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      throw err;
     }
-  ],
-  "commentAnalysis": {
-    "overallSentiment": "Positive" | "Negative" | "Neutral" | "Polarized",
-    "sentimentScore": number, // -1 to 1
-    "dominantEmotions": ["string"],
-    "logicalFallacies": ["string"],
-    "botProbabilityScore": number, // 0-10
-    "summary": "string"
   }
+  throw lastError;
 }
-`;
 
-// --- Scraper Utilities ---
+// Define formal schema for deterministic JSON output
+const ANALYSIS_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    accuracyRating: { type: Type.NUMBER, description: "1-10 rating of factual accuracy" },
+    overallSentiment: { type: Type.STRING, description: "Positive, Negative, or Neutral" },
+    summary: { type: Type.STRING, description: "Detailed summary of the video content and verification results" },
+    keyTakeaways: { 
+      type: Type.ARRAY, 
+      items: { type: Type.STRING },
+      description: "List of 3-5 major insights" 
+    },
+    claims: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          claim: { type: Type.STRING },
+          verdict: { type: Type.STRING, description: "True, False, Misleading, Unverified, or Mixed" },
+          confidenceScore: { type: Type.NUMBER, description: "0-10" },
+          explanation: { type: Type.STRING }
+        },
+        required: ["claim", "verdict", "confidenceScore", "explanation"]
+      }
+    },
+    commentAnalysis: {
+      type: Type.OBJECT,
+      properties: {
+        overallSentiment: { type: Type.STRING },
+        sentimentScore: { type: Type.NUMBER },
+        dominantEmotions: { type: Type.ARRAY, items: { type: Type.STRING } },
+        logicalFallacies: { type: Type.ARRAY, items: { type: Type.STRING } },
+        botProbabilityScore: { type: Type.NUMBER },
+        summary: { type: Type.STRING }
+      },
+      required: ["overallSentiment", "sentimentScore", "dominantEmotions", "logicalFallacies", "botProbabilityScore", "summary"]
+    }
+  },
+  required: ["accuracyRating", "overallSentiment", "summary", "keyTakeaways", "claims", "commentAnalysis"]
+};
+
+const ANALYSIS_SYSTEM_PROMPT = `You are INFAKT, an elite Fact-Checking and Media Analysis Engine. Follow the SIFT methodology (Stop, Investigate source, Find better coverage, Trace context). Perform rigorous Google Searches to verify claims against external reality.`;
 
 const extractVideoId = (url: string): string | null => {
   const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
@@ -56,22 +77,12 @@ const extractVideoId = (url: string): string | null => {
 
 const cleanVTT = (raw: string): string => {
     try {
-        // Remove WEBVTT header
         let text = raw.replace(/^WEBVTT.*\n/g, '');
-        // Remove timestamps
         text = text.replace(/\d{2}:\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}:\d{2}\.\d{3}.*/g, '');
-        // Remove HTML-like tags
         text = text.replace(/<[^>]*>/g, '');
-        // Remove empty lines and excessive whitespace
-        const lines = text.split('\n')
-            .map(l => l.trim())
-            .filter(l => l.length > 0 && !l.match(/^\d+$/)); // remove separate line numbers if any
-        
-        // Deduplicate consecutive identical lines (common in rolling captions)
+        const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0 && !l.match(/^\d+$/));
         return [...new Set(lines)].join(' '); 
-    } catch (e) {
-        return raw;
-    }
+    } catch (e) { return raw; }
 };
 
 interface ScrapedData {
@@ -82,19 +93,13 @@ interface ScrapedData {
     comments: string | null;
 }
 
-// Uses Piped API (public Invidious instances) to fetch data without API keys
 async function fetchYouTubeData(videoId: string): Promise<ScrapedData | null> {
-    const API_BASE = 'https://pipedapi.kavin.rocks'; // Reliable public instance
-    
+    const API_BASE = 'https://pipedapi.kavin.rocks';
     try {
-        console.log(`Fetching metadata for ${videoId}...`);
-        
-        // 1. Fetch Stream Data
         const streamRes = await fetch(`${API_BASE}/streams/${videoId}`);
         if (!streamRes.ok) throw new Error("Stream fetch failed");
         const streamData = await streamRes.json();
         
-        // 2. Fetch Comments
         let commentsText = "";
         try {
             const commentsRes = await fetch(`${API_BASE}/comments/${videoId}`);
@@ -104,26 +109,19 @@ async function fetchYouTubeData(videoId: string): Promise<ScrapedData | null> {
                     ? commentsData.comments.slice(0, 40).map((c: any) => `[User: ${c.author}] ${c.commentText}`).join("\n")
                     : "";
             }
-        } catch (e) {
-            console.warn("Failed to fetch comments", e);
-        }
+        } catch (e) {}
 
-        // 3. Process Transcript
         let transcriptText = null;
         if (streamData.subtitles && streamData.subtitles.length > 0) {
-            // Prioritize English, manual -> auto
             const enSubtitle = streamData.subtitles.find((s: any) => s.code === 'en' && !s.autoGenerated) 
                                || streamData.subtitles.find((s: any) => s.code === 'en')
                                || streamData.subtitles[0];
-            
             if (enSubtitle) {
                 try {
                     const subRes = await fetch(enSubtitle.url);
                     const subRaw = await subRes.text();
                     transcriptText = cleanVTT(subRaw);
-                } catch (e) {
-                    console.warn("Failed to download subtitle text", e);
-                }
+                } catch (e) {}
             }
         }
 
@@ -131,118 +129,62 @@ async function fetchYouTubeData(videoId: string): Promise<ScrapedData | null> {
             title: streamData.title,
             description: streamData.description,
             author: streamData.uploader,
-            transcript: transcriptText ? transcriptText.substring(0, 25000) : null, // Limit char count for context window safety
+            transcript: transcriptText ? transcriptText.substring(0, 25000) : null,
             comments: commentsText ? commentsText.substring(0, 10000) : null
         };
-
-    } catch (e) {
-        console.warn("Scraping failed, falling back to basic metadata", e);
-        return null;
-    }
+    } catch (e) { return null; }
 }
 
-// Fallback metadata fetcher
 async function getBasicMetadata(url: string): Promise<{ title: string; author_name: string } | null> {
   try {
     const response = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(url)}`);
     const data = await response.json();
     if (data.error || !data.title) return null;
-    return {
-      title: data.title,
-      author_name: data.author_name
-    };
-  } catch (e) {
-    return null;
-  }
+    return { title: data.title, author_name: data.author_name };
+  } catch (e) { return null; }
 }
 
-export const analyzeContent = async (
-  url: string
-): Promise<AnalysisResult> => {
+export const analyzeContent = async (url: string): Promise<AnalysisResult> => {
   const ai = getClient();
   const videoId = extractVideoId(url);
   
   let contentContext = "";
   let scrapedData: ScrapedData | null = null;
 
-  // 1. Try Deep Scraping
-  if (videoId) {
-      scrapedData = await fetchYouTubeData(videoId);
-  }
+  if (videoId) scrapedData = await fetchYouTubeData(videoId);
 
   if (scrapedData) {
       contentContext = `
-      === TARGET VIDEO DATA FETCHED SUCCESSFULLY ===
-      TITLE: "${scrapedData.title}"
+      VIDEO TITLE: "${scrapedData.title}"
       AUTHOR: "${scrapedData.author}"
       URL: ${url}
-      
-      === ACTUAL TRANSCRIPT (Partial/Full) ===
-      ${scrapedData.transcript || "Transcript unavailable via API. Please search for it."}
-      
-      === PUBLIC COMMENTS SAMPLE ===
-      ${scrapedData.comments || "Comments unavailable via API. Please search for community sentiment."}
-      
-      INSTRUCTION: Use the provided transcript to verify the claims. Use the provided comments to analyze the sentiment.
+      TRANSCRIPT: ${scrapedData.transcript || "Unavailable"}
+      COMMENTS: ${scrapedData.comments || "Unavailable"}
       `;
   } else {
-      // Fallback
       const metadata = await getBasicMetadata(url);
-      if (metadata) {
-        contentContext = `
-        TARGET VIDEO TITLE: "${metadata.title}"
-        TARGET VIDEO AUTHOR: "${metadata.author_name}"
-        TARGET URL: ${url}
-        
-        INSTRUCTION: Perform a Google Search specifically for "${metadata.title}" transcript and reviews. Ensure you are analyzing THIS video.
-        `;
-      } else {
-        contentContext = `
-        TARGET URL: ${url}
-        INSTRUCTION: Extract the specific video title from the URL search results first.
-        `;
-      }
+      contentContext = metadata 
+        ? `TITLE: "${metadata.title}" AUTHOR: "${metadata.author_name}" URL: ${url}` 
+        : `URL: ${url}`;
   }
 
-  const prompt = `
-    ${contentContext}
+  const prompt = `Analyze the following video content and verify its claims using Search Grounding: ${contentContext}`;
 
-    **EXECUTE DEEP RESEARCH PLAN:**
-
-    1. **Fact-Checking**: 
-       - If transcript is provided above, extract the 3-5 most controversial or verifiable claims.
-       - If not, use Google Search to find summaries and quotes.
-       - Cross-reference these claims with Google Search results for "fact check", "statistics", and "academic consensus".
-    
-    2. **Discourse Analysis**:
-       - If comments are provided above, analyze them for logical fallacies and sentiment.
-       - ALSO search for "Reddit [Video Title]" to find external discussions.
-
-    3. **Synthesis**: Combine internal data (transcript/comments) with external data (search results) into the JSON report.
-  `;
-
-  try {
+  return withRetry(async () => {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
+      model: 'gemini-3-flash-preview',
+      contents: [{ parts: [{ text: prompt }] }],
       config: {
         systemInstruction: ANALYSIS_SYSTEM_PROMPT,
         tools: [{ googleSearch: {} }],
-        thinkingConfig: { thinkingBudget: 8192 },
+        thinkingConfig: { thinkingBudget: 4096 },
+        maxOutputTokens: 8000, // Reserve space for the final JSON response
+        responseMimeType: "application/json",
+        responseSchema: ANALYSIS_SCHEMA
       },
     });
 
-    const text = response.text;
-    
-    // Extract JSON from code block
-    const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/) || text.match(/```json([\s\S]*?)```/) || text.match(/{[\s\S]*}/);
-    
-    if (!jsonMatch) {
-      throw new Error("Failed to parse analysis results. The video might be too obscure to analyze via Search.");
-    }
-
-    const rawJson = jsonMatch[1] || jsonMatch[0];
-    const data = JSON.parse(rawJson) as AnalysisResult;
+    const data = JSON.parse(response.text) as AnalysisResult;
 
     const sources = response.candidates?.[0]?.groundingMetadata?.groundingChunks
       ?.map((chunk: any) => chunk.web)
@@ -253,24 +195,22 @@ export const analyzeContent = async (
       keyTakeaways: data.keyTakeaways || [],
       sources: sources as { title: string; uri: string }[],
     };
-
-  } catch (error) {
-    console.error("Analysis failed:", error);
-    throw error;
-  }
+  });
 };
 
 export const createChatSession = () => {
   const ai = getClient();
   return ai.chats.create({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3-flash-preview',
     config: {
-      systemInstruction: "You are INFAKT, a helpful assistant explaining the fact-checking analysis. You have access to the analysis results. Answer follow-up questions about the claims, sentiment, and sources.",
+      systemInstruction: "You are INFAKT, an expert fact-checker assistant. Answer follow-up questions accurately based on the analysis context provided.",
     },
   });
 };
 
 export const sendMessageToChat = async (chat: Chat, message: string): Promise<string> => {
-    const response: GenerateContentResponse = await chat.sendMessage({ message });
-    return response.text || "I couldn't generate a response.";
+    return withRetry(async () => {
+        const response: GenerateContentResponse = await chat.sendMessage({ message });
+        return response.text || "I couldn't generate a response.";
+    });
 };
